@@ -1,4 +1,11 @@
 pipeline {
+    environment {
+    registry = "webproject/hello-world"
+    registryCredential = 'dockerhub'
+    dockerImage = ''
+  }
+    
+    
     agent {
         docker {
             image 'maven:3-alpine'
@@ -21,20 +28,28 @@ pipeline {
                 }
             }
         }
-        stage('Docker Build') {
-      agent any
-      steps {
-        sh 'docker build -t webproject/hello-world:latest .'
-      }
-    }
-      stage('Docker Push') {
-        agent any
-        steps {
-            withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                sh 'docker push webproject/hello-world:latest'
-            }
+        
+        stage('Building image') {
+      steps{
+        script {
+          dockerImage = docker.build registry + ":$BUILD_NUMBER"
         }
       }
+    }
+    stage('Deploy Image') {
+      steps{
+        script {
+          docker.withRegistry( '', registryCredential ) {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+    stage('Remove Unused docker image') {
+      steps{
+        sh "docker rmi $registry:$BUILD_NUMBER"
+      }
+    }  
+      
     }
 }
