@@ -1,7 +1,7 @@
 pipeline {
     environment {
     registry = "webproject/hello-world"
-    registryCredential = 'dockerhub'
+    registryCredential = 'dockerHub'
     dockerImage = ''
   }
     
